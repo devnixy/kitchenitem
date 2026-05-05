@@ -10,8 +10,11 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import {
   ShoppingCart, Phone, MessageCircle, Check, Zap, Shield,
-  Truck, Clock, Star, Minus, Plus, Flame
+  Truck, Clock, Star, Minus, Plus, Flame, HelpCircle
 } from "lucide-react";
+import {
+  Accordion, AccordionItem, AccordionTrigger, AccordionContent
+} from "@/components/ui/accordion";
 import heroImg from "@/assets/chopper-hero.jpg";
 import actionImg from "@/assets/chopper-action.jpg";
 import boxImg from "@/assets/chopper-box.jpg";
