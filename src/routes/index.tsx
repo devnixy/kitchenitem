@@ -15,6 +15,7 @@ import {
 import {
   Accordion, AccordionItem, AccordionTrigger, AccordionContent
 } from "@/components/ui/accordion";
+import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/chopper-hero.jpg";
 import actionImg from "@/assets/chopper-action.jpg";
 import boxImg from "@/assets/chopper-box.jpg";
@@ -40,18 +41,31 @@ function Index() {
     document.getElementById("order")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.address || !form.phone) {
+    if (!form.name.trim() || !form.address.trim() || !form.phone.trim()) {
       toast.error("দয়া করে সব তথ্য পূরণ করুন");
       return;
     }
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
-      toast.success("অর্ডার কনফার্ম হয়েছে! আমরা শীঘ্রই কল করব।");
-      setForm({ name: "", address: "", phone: "" });
-    }, 800);
+    const { error } = await supabase.from("orders").insert({
+      customer_name: form.name.trim().slice(0, 100),
+      address: form.address.trim().slice(0, 500),
+      phone: form.phone.trim().slice(0, 20),
+      quantity: qty,
+      unit_price: PRICE,
+      shipping_fee: shippingFee,
+      total,
+      shipping_area: shipping === "inside" ? "ঢাকার ভিতরে" : "ঢাকার বাইরে",
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error("অর্ডার সাবমিট করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+      return;
+    }
+    toast.success("অর্ডার কনফার্ম হয়েছে! আমরা শীঘ্রই কল করব।");
+    setForm({ name: "", address: "", phone: "" });
+    setQty(1);
   };
 
   return (
