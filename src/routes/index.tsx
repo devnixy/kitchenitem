@@ -10,8 +10,11 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import {
   ShoppingCart, Phone, MessageCircle, Check, Zap, Shield,
-  Truck, Clock, Star, Minus, Plus, Flame
+  Truck, Clock, Star, Minus, Plus, Flame, HelpCircle
 } from "lucide-react";
+import {
+  Accordion, AccordionItem, AccordionTrigger, AccordionContent
+} from "@/components/ui/accordion";
 import heroImg from "@/assets/chopper-hero.jpg";
 import actionImg from "@/assets/chopper-action.jpg";
 import boxImg from "@/assets/chopper-box.jpg";
@@ -197,6 +200,72 @@ function Index() {
             </a>
           </Button>
         </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="max-w-3xl mx-auto px-4 py-12">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-accent/30 text-accent-foreground px-3 py-1 rounded-full text-xs font-semibold mb-3">
+            <HelpCircle className="w-3.5 h-3.5" /> সাধারণ জিজ্ঞাসা
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold">
+            অর্ডারের আগে <span className="text-gradient">জেনে নিন</span>
+          </h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            গ্রাহকদের সবচেয়ে বেশি জিজ্ঞাসিত প্রশ্নগুলোর উত্তর
+          </p>
+        </div>
+
+        <Card className="p-2 sm:p-4 shadow-soft rounded-2xl">
+          <Accordion type="single" collapsible defaultValue="q1" className="w-full">
+            {[
+              {
+                v: "q1",
+                q: "ঢাকার ভিতরে ডেলিভারি চার্জ কত?",
+                a: "ঢাকার ভিতরে ডেলিভারি চার্জ মাত্র ৭০৳। অর্ডার কনফার্ম করার ২৪ ঘন্টার মধ্যে আপনার পণ্য পৌঁছে যাবে।",
+              },
+              {
+                v: "q2",
+                q: "ঢাকার বাইরে ডেলিভারি চার্জ ও সময় কত?",
+                a: "ঢাকার বাইরে সারা বাংলাদেশে ডেলিভারি চার্জ ১৩০৳। কুরিয়ার সার্ভিসের মাধ্যমে ৪৮-৭২ ঘন্টার মধ্যে পণ্য পৌঁছে যাবে।",
+              },
+              {
+                v: "q3",
+                q: "ক্যাশ অন ডেলিভারি (COD) কি আছে?",
+                a: "হ্যাঁ, সারা বাংলাদেশে ক্যাশ অন ডেলিভারি সুবিধা রয়েছে। পণ্য হাতে পেয়ে চেক করার পর টাকা পরিশোধ করতে পারবেন। অগ্রিম কোনো পেমেন্ট দিতে হবে না।",
+              },
+              {
+                v: "q4",
+                q: "ডেলিভারির আগে পণ্য চেক করা যাবে?",
+                a: "অবশ্যই। ডেলিভারিম্যানের সামনে বক্স খুলে পণ্য দেখে, চেক করে তারপর টাকা পরিশোধ করতে পারবেন।",
+              },
+              {
+                v: "q5",
+                q: "অর্ডার কীভাবে দিব?",
+                a: "নিচের অর্ডার ফর্মে আপনার নাম, ঠিকানা ও মোবাইল নম্বর দিয়ে কনফার্ম বাটনে ক্লিক করুন। অথবা সরাসরি 01610-356653 নম্বরে কল/WhatsApp করেও অর্ডার করতে পারেন।",
+              },
+              {
+                v: "q6",
+                q: "পণ্যে কোনো সমস্যা হলে কী করব?",
+                a: "ডেলিভারির সময় পণ্যে কোনো ত্রুটি পেলে সাথে সাথেই আমাদের জানান। আমরা পণ্য পরিবর্তন বা ফেরত দেওয়ার ব্যবস্থা করব।",
+              },
+              {
+                v: "q7",
+                q: "একসাথে একাধিক অর্ডার করা যাবে?",
+                a: "জ্বী, ফর্মে কোয়ান্টিটি বাড়িয়ে যত খুশি অর্ডার করতে পারবেন। ৩+ অর্ডারে বিশেষ ছাড়ের জন্য সরাসরি কল করুন।",
+              },
+            ].map((f) => (
+              <AccordionItem key={f.v} value={f.v} className="border-border px-3">
+                <AccordionTrigger className="text-left font-semibold text-sm sm:text-base hover:no-underline">
+                  {f.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-sm leading-relaxed">
+                  {f.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </Card>
       </section>
 
       {/* Order Form */}
