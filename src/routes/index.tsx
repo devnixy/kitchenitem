@@ -15,6 +15,7 @@ import {
 import {
   Accordion, AccordionItem, AccordionTrigger, AccordionContent
 } from "@/components/ui/accordion";
+import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/chopper-hero.jpg";
 import actionImg from "@/assets/chopper-action.jpg";
 import boxImg from "@/assets/chopper-box.jpg";
