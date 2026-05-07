@@ -110,7 +110,7 @@ function AdminPage() {
         return;
       }
       setIsAdmin(true);
-      await loadOrders();
+      await Promise.all([loadOrders(), loadGtm()]);
       setLoading(false);
     };
     init();
