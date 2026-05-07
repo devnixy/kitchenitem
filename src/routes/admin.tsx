@@ -39,21 +39,54 @@ const STATUS_OPTIONS: { value: Status; label: string; color: string }[] = [
 function AdminPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<Status | "all">("all");
+  const [gtmId, setGtmId] = useState("");
+  const [gtmInput, setGtmInput] = useState("");
+  const [savingGtm, setSavingGtm] = useState(false);
 
   const loadOrders = useCallback(async () => {
+    setRefreshing(true);
     const { data, error } = await supabase
       .from("orders")
       .select("*")
       .order("created_at", { ascending: false });
+    setRefreshing(false);
     if (error) {
       toast.error("অর্ডার লোড করতে সমস্যা হয়েছে");
       return;
     }
     setOrders(data ?? []);
   }, []);
+
+  const loadGtm = useCallback(async () => {
+    const { data } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "gtm_id")
+      .maybeSingle();
+    const v = data?.value ?? "";
+    setGtmId(v);
+    setGtmInput(v);
+  }, []);
+
+  const handleSaveGtm = async () => {
+    const trimmed = gtmInput.trim();
+    if (!/^GTM-[A-Z0-9]+$/i.test(trimmed)) {
+      toast.error("সঠিক GTM ID দিন (যেমন GTM-XXXXXXX)");
+      return;
+    }
+    setSavingGtm(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert({ key: "gtm_id", value: trimmed, updated_at: new Date().toISOString() });
+    setSavingGtm(false);
+    if (error) return toast.error("সেভ ব্যর্থ");
+    setGtmId(trimmed);
+    toast.success("GTM ID সেভ হয়েছে। পরবর্তী পেজ লোড থেকে কার্যকর হবে।");
+  };
 
   useEffect(() => {
     let mounted = true;
