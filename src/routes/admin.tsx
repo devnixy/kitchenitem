@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -15,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import {
-  LogOut, Trash2, Phone, MapPin, Package, RefreshCw, ShieldAlert,
+  LogOut, Trash2, Phone, MapPin, Package, RefreshCw, ShieldAlert, Save, Settings,
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -37,21 +39,54 @@ const STATUS_OPTIONS: { value: Status; label: string; color: string }[] = [
 function AdminPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<Status | "all">("all");
+  const [gtmId, setGtmId] = useState("");
+  const [gtmInput, setGtmInput] = useState("");
+  const [savingGtm, setSavingGtm] = useState(false);
 
   const loadOrders = useCallback(async () => {
+    setRefreshing(true);
     const { data, error } = await supabase
       .from("orders")
       .select("*")
       .order("created_at", { ascending: false });
+    setRefreshing(false);
     if (error) {
       toast.error("অর্ডার লোড করতে সমস্যা হয়েছে");
       return;
     }
     setOrders(data ?? []);
   }, []);
+
+  const loadGtm = useCallback(async () => {
+    const { data } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "gtm_id")
+      .maybeSingle();
+    const v = data?.value ?? "";
+    setGtmId(v);
+    setGtmInput(v);
+  }, []);
+
+  const handleSaveGtm = async () => {
+    const trimmed = gtmInput.trim();
+    if (!/^GTM-[A-Z0-9]+$/i.test(trimmed)) {
+      toast.error("সঠিক GTM ID দিন (যেমন GTM-XXXXXXX)");
+      return;
+    }
+    setSavingGtm(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert({ key: "gtm_id", value: trimmed, updated_at: new Date().toISOString() });
+    setSavingGtm(false);
+    if (error) return toast.error("সেভ ব্যর্থ");
+    setGtmId(trimmed);
+    toast.success("GTM ID সেভ হয়েছে। পরবর্তী পেজ লোড থেকে কার্যকর হবে।");
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -75,7 +110,7 @@ function AdminPage() {
         return;
       }
       setIsAdmin(true);
-      await loadOrders();
+      await Promise.all([loadOrders(), loadGtm()]);
       setLoading(false);
     };
     init();
@@ -87,7 +122,7 @@ function AdminPage() {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, [navigate, loadOrders]);
+  }, [navigate, loadOrders, loadGtm]);
 
   const handleStatusChange = async (id: string, status: Status) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
@@ -109,11 +144,7 @@ function AdminPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">লোড হচ্ছে...</div>
-      </div>
-    );
+    return <AdminSkeleton />;
   }
 
   if (!isAdmin) {
@@ -155,8 +186,8 @@ function AdminPage() {
             <h1 className="font-bold text-base sm:text-lg truncate">অ্যাডমিন প্যানেল</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={loadOrders}>
-              <RefreshCw className="w-4 h-4 sm:mr-1.5" />
+            <Button size="sm" variant="outline" onClick={loadOrders} disabled={refreshing}>
+              <RefreshCw className={`w-4 h-4 sm:mr-1.5 ${refreshing ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">রিফ্রেশ</span>
             </Button>
             <Button size="sm" variant="ghost" asChild>
@@ -170,7 +201,33 @@ function AdminPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4">
+        {/* GTM Settings */}
+        <Card className="p-4 rounded-xl">
+          <div className="flex items-center gap-2 mb-3">
+            <Settings className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold text-sm">Google Tag Manager ID</h2>
+            {gtmId && (
+              <Badge variant="secondary" className="ml-auto font-mono text-xs">{gtmId}</Badge>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={gtmInput}
+              onChange={(e) => setGtmInput(e.target.value)}
+              placeholder="GTM-XXXXXXX"
+              className="font-mono"
+            />
+            <Button onClick={handleSaveGtm} disabled={savingGtm || gtmInput.trim() === gtmId}>
+              <Save className={`w-4 h-4 mr-1.5 ${savingGtm ? "animate-pulse" : ""}`} />
+              সেভ
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            পরিবর্তন সাইটের পরবর্তী পেজ লোড থেকে কার্যকর হবে।
+          </p>
+        </Card>
+
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4">
           <Card
@@ -270,6 +327,56 @@ function AdminPage() {
             })}
           </div>
         )}
+      </main>
+    </div>
+  );
+}
+
+function AdminSkeleton() {
+  return (
+    <div className="min-h-screen bg-muted/30">
+      <header className="bg-background border-b border-border sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="w-5 h-5 rounded" />
+            <Skeleton className="h-5 w-36" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-20" />
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-8 w-20" />
+          </div>
+        </div>
+      </header>
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4">
+        <Card className="p-4 rounded-xl space-y-3">
+          <Skeleton className="h-5 w-48" />
+          <div className="flex gap-2">
+            <Skeleton className="h-9 flex-1" />
+            <Skeleton className="h-9 w-20" />
+          </div>
+        </Card>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="p-3 rounded-xl space-y-2">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-7 w-10" />
+            </Card>
+          ))}
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="p-4 rounded-xl space-y-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-5 w-16" />
+              </div>
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </Card>
+          ))}
+        </div>
       </main>
     </div>
   );
