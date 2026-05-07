@@ -186,8 +186,8 @@ function AdminPage() {
             <h1 className="font-bold text-base sm:text-lg truncate">অ্যাডমিন প্যানেল</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={loadOrders}>
-              <RefreshCw className="w-4 h-4 sm:mr-1.5" />
+            <Button size="sm" variant="outline" onClick={loadOrders} disabled={refreshing}>
+              <RefreshCw className={`w-4 h-4 sm:mr-1.5 ${refreshing ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">রিফ্রেশ</span>
             </Button>
             <Button size="sm" variant="ghost" asChild>
