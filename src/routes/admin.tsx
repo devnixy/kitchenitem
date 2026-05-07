@@ -201,7 +201,33 @@ function AdminPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4">
+        {/* GTM Settings */}
+        <Card className="p-4 rounded-xl">
+          <div className="flex items-center gap-2 mb-3">
+            <Settings className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold text-sm">Google Tag Manager ID</h2>
+            {gtmId && (
+              <Badge variant="secondary" className="ml-auto font-mono text-xs">{gtmId}</Badge>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={gtmInput}
+              onChange={(e) => setGtmInput(e.target.value)}
+              placeholder="GTM-XXXXXXX"
+              className="font-mono"
+            />
+            <Button onClick={handleSaveGtm} disabled={savingGtm || gtmInput.trim() === gtmId}>
+              <Save className={`w-4 h-4 mr-1.5 ${savingGtm ? "animate-pulse" : ""}`} />
+              সেভ
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            পরিবর্তন সাইটের পরবর্তী পেজ লোড থেকে কার্যকর হবে।
+          </p>
+        </Card>
+
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4">
           <Card
