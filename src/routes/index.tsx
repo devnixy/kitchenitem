@@ -16,6 +16,7 @@ import {
   Accordion, AccordionItem, AccordionTrigger, AccordionContent
 } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
+import { ThemeToggle } from "@/components/theme-toggle";
 import heroImg from "@/assets/chopper-hero.jpg";
 import actionImg from "@/assets/chopper-action.jpg";
 import boxImg from "@/assets/chopper-box.jpg";
@@ -89,9 +90,12 @@ function Index() {
               <div className="text-[10px] sm:text-xs text-muted-foreground">Smart Kitchen Store</div>
             </div>
           </div>
-          <a href="tel:01610356653" className="flex items-center gap-1.5 text-sm font-semibold text-primary">
-            <Phone className="w-4 h-4" /> <span className="hidden xs:inline">কল করুন</span>
-          </a>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <a href="tel:01610356653" className="flex items-center gap-1.5 text-sm font-semibold text-primary px-2">
+              <Phone className="w-4 h-4" /> <span className="hidden xs:inline">কল করুন</span>
+            </a>
+          </div>
         </div>
       </header>
 
