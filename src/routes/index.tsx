@@ -64,6 +64,21 @@ function Index() {
       toast.error("অর্ডার সাবমিট করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
       return;
     }
+    // GTM dataLayer event
+    if (typeof window !== "undefined") {
+      (window as any).dataLayer = (window as any).dataLayer || [];
+      (window as any).dataLayer.push({
+        event: "form_submit",
+        form_name: "order_form",
+        product: "Vegetable Push Chopper",
+        quantity: qty,
+        unit_price: PRICE,
+        shipping_fee: shippingFee,
+        value: total,
+        currency: "BDT",
+        shipping_area: shipping === "inside" ? "inside_dhaka" : "outside_dhaka",
+      });
+    }
     toast.success("অর্ডার কনফার্ম হয়েছে! আমরা শীঘ্রই কল করব।");
     setForm({ name: "", address: "", phone: "" });
     setQty(1);
