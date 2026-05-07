@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -15,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import {
-  LogOut, Trash2, Phone, MapPin, Package, RefreshCw, ShieldAlert,
+  LogOut, Trash2, Phone, MapPin, Package, RefreshCw, ShieldAlert, Save, Settings,
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
