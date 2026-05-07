@@ -144,11 +144,7 @@ function AdminPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">লোড হচ্ছে...</div>
-      </div>
-    );
+    return <AdminSkeleton />;
   }
 
   if (!isAdmin) {
