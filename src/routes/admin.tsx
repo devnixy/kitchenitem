@@ -122,7 +122,7 @@ function AdminPage() {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, [navigate, loadOrders]);
+  }, [navigate, loadOrders, loadGtm]);
 
   const handleStatusChange = async (id: string, status: Status) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
