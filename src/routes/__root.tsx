@@ -1,6 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { GtmLoader } from "@/components/gtm-loader";
 
 function NotFoundComponent() {
   return (
