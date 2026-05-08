@@ -323,7 +323,125 @@ function AdminPage() {
           </p>
         </Card>
 
-        {/* Stats */}
+        {/* Products */}
+        <Card className="p-4 rounded-xl">
+          <div className="flex items-center gap-2 mb-3">
+            <Package className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold text-sm">প্রোডাক্ট ({products.length})</h2>
+            <Button size="sm" className="ml-auto" onClick={openNewProduct}>
+              <Plus className="w-4 h-4 mr-1.5" /> নতুন প্রোডাক্ট
+            </Button>
+          </div>
+
+          {products.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              কোনো প্রোডাক্ট নেই। উপরের বাটনে ক্লিক করে যোগ করুন।
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {products.map((p) => (
+                <div key={p.id} className="border border-border rounded-xl p-3 flex gap-3">
+                  <div className="w-16 h-16 rounded-lg bg-muted flex-shrink-0 overflow-hidden flex items-center justify-center">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-sm truncate">{p.name}</h3>
+                      {!p.is_active && <Badge variant="secondary" className="text-[10px]">Off</Badge>}
+                    </div>
+                    <div className="text-sm text-primary font-bold">
+                      {p.price}৳
+                      {p.old_price ? (
+                        <span className="ml-1.5 text-xs text-muted-foreground line-through font-normal">{p.old_price}৳</span>
+                      ) : null}
+                    </div>
+                    <div className="flex gap-1 mt-2">
+                      <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => openEditProduct(p)}>
+                        <Pencil className="w-3 h-3 mr-1" /> এডিট
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="destructive" className="h-7 px-2">
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>প্রোডাক্ট ডিলিট করবেন?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              "{p.name}" স্থায়ীভাবে মুছে যাবে।
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteProduct(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              ডিলিট
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Product Add/Edit Dialog */}
+        <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{editingProduct ? "প্রোডাক্ট এডিট" : "নতুন প্রোডাক্ট"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="p-name">নাম *</Label>
+                <Input id="p-name" value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="p-desc">বিবরণ</Label>
+                <Textarea id="p-desc" rows={3} value={productForm.description} onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="p-img">ছবির URL</Label>
+                <Input id="p-img" placeholder="https://..." value={productForm.image_url} onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="p-price">মূল্য (৳) *</Label>
+                  <Input id="p-price" type="number" min={0} value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="p-old">পুরাতন মূল্য</Label>
+                  <Input id="p-old" type="number" min={0} value={productForm.old_price} onChange={(e) => setProductForm({ ...productForm, old_price: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 items-end">
+                <div className="space-y-1.5">
+                  <Label htmlFor="p-order">ক্রম</Label>
+                  <Input id="p-order" type="number" value={productForm.display_order} onChange={(e) => setProductForm({ ...productForm, display_order: e.target.value })} />
+                </div>
+                <div className="flex items-center gap-2 h-9">
+                  <Switch id="p-active" checked={productForm.is_active} onCheckedChange={(v) => setProductForm({ ...productForm, is_active: v })} />
+                  <Label htmlFor="p-active">সক্রিয়</Label>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setProductDialogOpen(false)}>বাতিল</Button>
+              <Button onClick={handleSaveProduct} disabled={savingProduct}>
+                <Save className={`w-4 h-4 mr-1.5 ${savingProduct ? "animate-pulse" : ""}`} />
+                সেভ
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4">
           <Card
             className={`p-3 cursor-pointer transition rounded-xl ${filter === "all" ? "ring-2 ring-primary" : ""}`}
