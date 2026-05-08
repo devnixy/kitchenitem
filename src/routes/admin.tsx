@@ -112,6 +112,77 @@ function AdminPage() {
     toast.success("GTM ID সেভ হয়েছে। পরবর্তী পেজ লোড থেকে কার্যকর হবে।");
   };
 
+  const loadProducts = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (error) {
+      toast.error("প্রোডাক্ট লোড করতে সমস্যা হয়েছে");
+      return;
+    }
+    setProducts(data ?? []);
+  }, []);
+
+  const openNewProduct = () => {
+    setEditingProduct(null);
+    setProductForm(emptyProductForm);
+    setProductDialogOpen(true);
+  };
+
+  const openEditProduct = (p: Product) => {
+    setEditingProduct(p);
+    setProductForm({
+      name: p.name,
+      description: p.description ?? "",
+      image_url: p.image_url ?? "",
+      price: String(p.price),
+      old_price: p.old_price != null ? String(p.old_price) : "",
+      display_order: String(p.display_order),
+      is_active: p.is_active,
+    });
+    setProductDialogOpen(true);
+  };
+
+  const handleSaveProduct = async () => {
+    const name = productForm.name.trim();
+    const price = parseInt(productForm.price, 10);
+    if (!name) return toast.error("প্রোডাক্ট নাম দিন");
+    if (!Number.isFinite(price) || price < 0) return toast.error("সঠিক মূল্য দিন");
+    const oldPriceNum = productForm.old_price.trim() === "" ? null : parseInt(productForm.old_price, 10);
+    if (oldPriceNum !== null && (!Number.isFinite(oldPriceNum) || oldPriceNum < 0)) {
+      return toast.error("সঠিক পুরাতন মূল্য দিন");
+    }
+    const orderNum = parseInt(productForm.display_order, 10) || 0;
+
+    setSavingProduct(true);
+    const payload = {
+      name: name.slice(0, 200),
+      description: productForm.description.trim().slice(0, 2000) || null,
+      image_url: productForm.image_url.trim().slice(0, 500) || null,
+      price,
+      old_price: oldPriceNum,
+      display_order: orderNum,
+      is_active: productForm.is_active,
+    };
+    const { error } = editingProduct
+      ? await supabase.from("products").update(payload).eq("id", editingProduct.id)
+      : await supabase.from("products").insert(payload);
+    setSavingProduct(false);
+    if (error) return toast.error("সেভ ব্যর্থ");
+    toast.success(editingProduct ? "প্রোডাক্ট আপডেট হয়েছে" : "প্রোডাক্ট যোগ হয়েছে");
+    setProductDialogOpen(false);
+    await loadProducts();
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) return toast.error("ডিলিট ব্যর্থ");
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+    toast.success("প্রোডাক্ট ডিলিট হয়েছে");
+  };
+
   useEffect(() => {
     let mounted = true;
     const init = async () => {
