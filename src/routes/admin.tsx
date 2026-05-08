@@ -23,8 +23,7 @@ import {
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import {
-  LogOut, Trash2, Phone, MapPin, Package, RefreshCw, ShieldAlert, Save, Settings,
-  Plus, Pencil, ImageIcon,
+  LogOut, Trash2, Phone, MapPin, Package, RefreshCw, ShieldAlert, Save, Settings, Search, X,
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
