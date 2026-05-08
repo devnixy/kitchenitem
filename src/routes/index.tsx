@@ -95,11 +95,6 @@ function Index() {
       // Clear previous ecommerce object (GA4 best practice)
       dl.push({ ecommerce: null });
       dl.push({
-        event: "begin_checkout",
-        ecommerce: { currency: "BDT", value: subtotal, items: [item] },
-      });
-      dl.push({ ecommerce: null });
-      dl.push({
         event: "purchase",
         new_customer: true,
         orderData: {
