@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -18,6 +24,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import {
   LogOut, Trash2, Phone, MapPin, Package, RefreshCw, ShieldAlert, Save, Settings,
+  Plus, Pencil, ImageIcon,
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -27,6 +34,17 @@ export const Route = createFileRoute("/admin")({
 
 type Order = Tables<"orders">;
 type Status = Order["status"];
+type Product = Tables<"products">;
+
+const emptyProductForm = {
+  name: "",
+  description: "",
+  image_url: "",
+  price: "",
+  old_price: "",
+  display_order: "0",
+  is_active: true,
+};
 
 const STATUS_OPTIONS: { value: Status; label: string; color: string }[] = [
   { value: "pending", label: "Pending", color: "bg-yellow-500" },
@@ -46,6 +64,12 @@ function AdminPage() {
   const [gtmId, setGtmId] = useState("");
   const [gtmInput, setGtmInput] = useState("");
   const [savingGtm, setSavingGtm] = useState(false);
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productForm, setProductForm] = useState(emptyProductForm);
+  const [savingProduct, setSavingProduct] = useState(false);
 
   const loadOrders = useCallback(async () => {
     setRefreshing(true);
@@ -88,6 +112,77 @@ function AdminPage() {
     toast.success("GTM ID সেভ হয়েছে। পরবর্তী পেজ লোড থেকে কার্যকর হবে।");
   };
 
+  const loadProducts = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (error) {
+      toast.error("প্রোডাক্ট লোড করতে সমস্যা হয়েছে");
+      return;
+    }
+    setProducts(data ?? []);
+  }, []);
+
+  const openNewProduct = () => {
+    setEditingProduct(null);
+    setProductForm(emptyProductForm);
+    setProductDialogOpen(true);
+  };
+
+  const openEditProduct = (p: Product) => {
+    setEditingProduct(p);
+    setProductForm({
+      name: p.name,
+      description: p.description ?? "",
+      image_url: p.image_url ?? "",
+      price: String(p.price),
+      old_price: p.old_price != null ? String(p.old_price) : "",
+      display_order: String(p.display_order),
+      is_active: p.is_active,
+    });
+    setProductDialogOpen(true);
+  };
+
+  const handleSaveProduct = async () => {
+    const name = productForm.name.trim();
+    const price = parseInt(productForm.price, 10);
+    if (!name) return toast.error("প্রোডাক্ট নাম দিন");
+    if (!Number.isFinite(price) || price < 0) return toast.error("সঠিক মূল্য দিন");
+    const oldPriceNum = productForm.old_price.trim() === "" ? null : parseInt(productForm.old_price, 10);
+    if (oldPriceNum !== null && (!Number.isFinite(oldPriceNum) || oldPriceNum < 0)) {
+      return toast.error("সঠিক পুরাতন মূল্য দিন");
+    }
+    const orderNum = parseInt(productForm.display_order, 10) || 0;
+
+    setSavingProduct(true);
+    const payload = {
+      name: name.slice(0, 200),
+      description: productForm.description.trim().slice(0, 2000) || null,
+      image_url: productForm.image_url.trim().slice(0, 500) || null,
+      price,
+      old_price: oldPriceNum,
+      display_order: orderNum,
+      is_active: productForm.is_active,
+    };
+    const { error } = editingProduct
+      ? await supabase.from("products").update(payload).eq("id", editingProduct.id)
+      : await supabase.from("products").insert(payload);
+    setSavingProduct(false);
+    if (error) return toast.error("সেভ ব্যর্থ");
+    toast.success(editingProduct ? "প্রোডাক্ট আপডেট হয়েছে" : "প্রোডাক্ট যোগ হয়েছে");
+    setProductDialogOpen(false);
+    await loadProducts();
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) return toast.error("ডিলিট ব্যর্থ");
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+    toast.success("প্রোডাক্ট ডিলিট হয়েছে");
+  };
+
   useEffect(() => {
     let mounted = true;
     const init = async () => {
@@ -110,7 +205,7 @@ function AdminPage() {
         return;
       }
       setIsAdmin(true);
-      await Promise.all([loadOrders(), loadGtm()]);
+      await Promise.all([loadOrders(), loadGtm(), loadProducts()]);
       setLoading(false);
     };
     init();
@@ -122,7 +217,7 @@ function AdminPage() {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, [navigate, loadOrders, loadGtm]);
+  }, [navigate, loadOrders, loadGtm, loadProducts]);
 
   const handleStatusChange = async (id: string, status: Status) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
@@ -186,7 +281,7 @@ function AdminPage() {
             <h1 className="font-bold text-base sm:text-lg truncate">অ্যাডমিন প্যানেল</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={loadOrders} disabled={refreshing}>
+            <Button size="sm" variant="outline" onClick={() => { loadOrders(); loadProducts(); }} disabled={refreshing}>
               <RefreshCw className={`w-4 h-4 sm:mr-1.5 ${refreshing ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">রিফ্রেশ</span>
             </Button>
@@ -228,7 +323,125 @@ function AdminPage() {
           </p>
         </Card>
 
-        {/* Stats */}
+        {/* Products */}
+        <Card className="p-4 rounded-xl">
+          <div className="flex items-center gap-2 mb-3">
+            <Package className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold text-sm">প্রোডাক্ট ({products.length})</h2>
+            <Button size="sm" className="ml-auto" onClick={openNewProduct}>
+              <Plus className="w-4 h-4 mr-1.5" /> নতুন প্রোডাক্ট
+            </Button>
+          </div>
+
+          {products.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              কোনো প্রোডাক্ট নেই। উপরের বাটনে ক্লিক করে যোগ করুন।
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {products.map((p) => (
+                <div key={p.id} className="border border-border rounded-xl p-3 flex gap-3">
+                  <div className="w-16 h-16 rounded-lg bg-muted flex-shrink-0 overflow-hidden flex items-center justify-center">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-sm truncate">{p.name}</h3>
+                      {!p.is_active && <Badge variant="secondary" className="text-[10px]">Off</Badge>}
+                    </div>
+                    <div className="text-sm text-primary font-bold">
+                      {p.price}৳
+                      {p.old_price ? (
+                        <span className="ml-1.5 text-xs text-muted-foreground line-through font-normal">{p.old_price}৳</span>
+                      ) : null}
+                    </div>
+                    <div className="flex gap-1 mt-2">
+                      <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => openEditProduct(p)}>
+                        <Pencil className="w-3 h-3 mr-1" /> এডিট
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="destructive" className="h-7 px-2">
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>প্রোডাক্ট ডিলিট করবেন?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              "{p.name}" স্থায়ীভাবে মুছে যাবে।
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteProduct(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              ডিলিট
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Product Add/Edit Dialog */}
+        <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{editingProduct ? "প্রোডাক্ট এডিট" : "নতুন প্রোডাক্ট"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="p-name">নাম *</Label>
+                <Input id="p-name" value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="p-desc">বিবরণ</Label>
+                <Textarea id="p-desc" rows={3} value={productForm.description} onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="p-img">ছবির URL</Label>
+                <Input id="p-img" placeholder="https://..." value={productForm.image_url} onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="p-price">মূল্য (৳) *</Label>
+                  <Input id="p-price" type="number" min={0} value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="p-old">পুরাতন মূল্য</Label>
+                  <Input id="p-old" type="number" min={0} value={productForm.old_price} onChange={(e) => setProductForm({ ...productForm, old_price: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 items-end">
+                <div className="space-y-1.5">
+                  <Label htmlFor="p-order">ক্রম</Label>
+                  <Input id="p-order" type="number" value={productForm.display_order} onChange={(e) => setProductForm({ ...productForm, display_order: e.target.value })} />
+                </div>
+                <div className="flex items-center gap-2 h-9">
+                  <Switch id="p-active" checked={productForm.is_active} onCheckedChange={(v) => setProductForm({ ...productForm, is_active: v })} />
+                  <Label htmlFor="p-active">সক্রিয়</Label>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setProductDialogOpen(false)}>বাতিল</Button>
+              <Button onClick={handleSaveProduct} disabled={savingProduct}>
+                <Save className={`w-4 h-4 mr-1.5 ${savingProduct ? "animate-pulse" : ""}`} />
+                সেভ
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4">
           <Card
             className={`p-3 cursor-pointer transition rounded-xl ${filter === "all" ? "ring-2 ring-primary" : ""}`}
