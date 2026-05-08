@@ -205,7 +205,7 @@ function AdminPage() {
         return;
       }
       setIsAdmin(true);
-      await Promise.all([loadOrders(), loadGtm()]);
+      await Promise.all([loadOrders(), loadGtm(), loadProducts()]);
       setLoading(false);
     };
     init();
