@@ -65,6 +65,12 @@ function AdminPage() {
   const [gtmInput, setGtmInput] = useState("");
   const [savingGtm, setSavingGtm] = useState(false);
 
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productForm, setProductForm] = useState(emptyProductForm);
+  const [savingProduct, setSavingProduct] = useState(false);
+
   const loadOrders = useCallback(async () => {
     setRefreshing(true);
     const { data, error } = await supabase
