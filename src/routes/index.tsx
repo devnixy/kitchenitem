@@ -49,7 +49,7 @@ function Index() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("orders").insert({
+    const { data: inserted, error } = await supabase.from("orders").insert({
       customer_name: form.name.trim().slice(0, 100),
       address: form.address.trim().slice(0, 500),
       phone: form.phone.trim().slice(0, 20),
@@ -58,25 +58,65 @@ function Index() {
       shipping_fee: shippingFee,
       total,
       shipping_area: shipping === "inside" ? "ঢাকার ভিতরে" : "ঢাকার বাইরে",
-    });
+    }).select("id").single();
     setSubmitting(false);
     if (error) {
       toast.error("অর্ডার সাবমিট করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
       return;
     }
-    // GTM dataLayer event
+    // GTM dataLayer — GA4 ecommerce format
     if (typeof window !== "undefined") {
-      (window as any).dataLayer = (window as any).dataLayer || [];
-      (window as any).dataLayer.push({
-        event: "form_submit",
-        form_name: "order_form",
-        product: "Vegetable Push Chopper",
+      const item = {
+        item_id: "push-chopper",
+        item_name: "Vegetable Push Chopper",
+        item_category: "Kitchen",
+        price: PRICE,
         quantity: qty,
-        unit_price: PRICE,
-        shipping_fee: shippingFee,
-        value: total,
-        currency: "BDT",
-        shipping_area: shipping === "inside" ? "inside_dhaka" : "outside_dhaka",
+      };
+      const dl = ((window as any).dataLayer = (window as any).dataLayer || []);
+      // Clear previous ecommerce object (GA4 best practice)
+      dl.push({ ecommerce: null });
+      dl.push({
+        event: "begin_checkout",
+        ecommerce: { currency: "BDT", value: subtotal, items: [item] },
+      });
+      dl.push({ ecommerce: null });
+      dl.push({
+        event: "purchase",
+        new_customer: true,
+        orderData: {
+          attributes: {
+            date: new Date().toISOString(),
+            order_number: inserted?.id,
+            payment_method: "cod",
+            payment_method_title: "Cash on delivery",
+            status: "pending",
+          },
+          totals: {
+            currency: "BDT",
+            shipping_total: shippingFee,
+            total: total,
+            subtotal: subtotal,
+          },
+          customer: {
+            billing: {
+              first_name: form.name.trim(),
+              address_1: form.address.trim(),
+              phone: form.phone.trim(),
+              country: "BD",
+            },
+          },
+          items: [item],
+        },
+        ecommerce: {
+          currency: "BDT",
+          transaction_id: inserted?.id,
+          value: total,
+          tax: 0,
+          shipping: shippingFee,
+          coupon: "",
+          items: [item],
+        },
       });
     }
     toast.success("অর্ডার কনফার্ম হয়েছে! আমরা শীঘ্রই কল করব।");
