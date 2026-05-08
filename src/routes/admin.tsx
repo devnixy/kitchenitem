@@ -177,7 +177,11 @@ function AdminPage() {
     );
   }
 
-  const filtered = filter === "all" ? orders : orders.filter((o) => o.status === filter);
+  const phoneNorm = phoneSearch.replace(/\D/g, "");
+  const byStatus = filter === "all" ? orders : orders.filter((o) => o.status === filter);
+  const filtered = phoneNorm
+    ? byStatus.filter((o) => o.phone.replace(/\D/g, "").includes(phoneNorm))
+    : byStatus;
   const stats = STATUS_OPTIONS.map((s) => ({
     ...s,
     count: orders.filter((o) => o.status === s.value).length,
