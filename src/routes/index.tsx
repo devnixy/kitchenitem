@@ -40,6 +40,24 @@ function Index() {
 
   const scrollToOrder = () => {
     document.getElementById("order")?.scrollIntoView({ behavior: "smooth" });
+    if (typeof window !== "undefined") {
+      const dl = ((window as any).dataLayer = (window as any).dataLayer || []);
+      dl.push({ ecommerce: null });
+      dl.push({
+        event: "begin_checkout",
+        ecommerce: {
+          currency: "BDT",
+          value: PRICE * qty,
+          items: [{
+            item_id: "push-chopper",
+            item_name: "Vegetable Push Chopper",
+            item_category: "Kitchen",
+            price: PRICE,
+            quantity: qty,
+          }],
+        },
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
