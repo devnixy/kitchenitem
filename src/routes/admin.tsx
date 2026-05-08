@@ -217,7 +217,7 @@ function AdminPage() {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, [navigate, loadOrders, loadGtm]);
+  }, [navigate, loadOrders, loadGtm, loadProducts]);
 
   const handleStatusChange = async (id: string, status: Status) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
