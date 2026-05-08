@@ -33,17 +33,6 @@ export const Route = createFileRoute("/admin")({
 
 type Order = Tables<"orders">;
 type Status = Order["status"];
-type Product = Tables<"products">;
-
-const emptyProductForm = {
-  name: "",
-  description: "",
-  image_url: "",
-  price: "",
-  old_price: "",
-  display_order: "0",
-  is_active: true,
-};
 
 const STATUS_OPTIONS: { value: Status; label: string; color: string }[] = [
   { value: "pending", label: "Pending", color: "bg-yellow-500" },
