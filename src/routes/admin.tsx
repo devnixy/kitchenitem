@@ -235,6 +235,9 @@ function AdminPage() {
           </p>
         </Card>
 
+        {/* Site Content Editor */}
+        <SiteContentEditor />
+
         {/* Phone Search */}
         <Card className="p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-3">
