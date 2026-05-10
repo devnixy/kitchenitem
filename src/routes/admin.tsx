@@ -20,6 +20,7 @@ import {
   LogOut, Trash2, Phone, MapPin, Package, RefreshCw, ShieldAlert, Save, Settings, Search, X,
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { SiteContentEditor } from "@/components/site-content-editor";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
