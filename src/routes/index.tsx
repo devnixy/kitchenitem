@@ -10,13 +10,14 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import {
   ShoppingCart, Phone, MessageCircle, Check, Zap, Shield,
-  Truck, Clock, Star, Minus, Plus, Flame, HelpCircle
+  Truck, Clock, Star, Minus, Plus, Flame, HelpCircle,
 } from "lucide-react";
 import {
-  Accordion, AccordionItem, AccordionTrigger, AccordionContent
+  Accordion, AccordionItem, AccordionTrigger, AccordionContent,
 } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useSiteContent } from "@/hooks/use-site-content";
 import heroImg from "@/assets/chopper-hero.jpg";
 import actionImg from "@/assets/chopper-action.jpg";
 import boxImg from "@/assets/chopper-box.jpg";
@@ -25,16 +26,26 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const PRICE = 580;
-const OLD_PRICE = 750;
+const ICON_MAP: Record<string, any> = {
+  Zap, Shield, Check, Truck, Clock, Star,
+};
 
 function Index() {
+  const { content } = useSiteContent();
+  const { hero, contact, shipping: ship, features, faqs, gallery, brand, topbar } = content;
+
+  const PRICE = hero.price;
+  const heroImage = hero.image_url || heroImg;
+  const galleryImages = gallery.images.length > 0
+    ? gallery.images
+    : [heroImg, actionImg, boxImg, actionImg, heroImg, boxImg];
+
   const [qty, setQty] = useState(1);
   const [shipping, setShipping] = useState<"inside" | "outside">("inside");
   const [form, setForm] = useState({ name: "", address: "", phone: "" });
   const [submitting, setSubmitting] = useState(false);
 
-  const shippingFee = shipping === "inside" ? 70 : 130;
+  const shippingFee = shipping === "inside" ? ship.inside_fee : ship.outside_fee;
   const subtotal = PRICE * qty;
   const total = subtotal + shippingFee;
 
@@ -50,7 +61,7 @@ function Index() {
           value: PRICE * qty,
           items: [{
             item_id: "push-chopper",
-            item_name: "Vegetable Push Chopper",
+            item_name: `${hero.title_1} ${hero.title_2}`.trim(),
             item_category: "Kitchen",
             price: PRICE,
             quantity: qty,
@@ -75,24 +86,22 @@ function Index() {
       unit_price: PRICE,
       shipping_fee: shippingFee,
       total,
-      shipping_area: shipping === "inside" ? "ঢাকার ভিতরে" : "ঢাকার বাইরে",
+      shipping_area: shipping === "inside" ? ship.inside_label : ship.outside_label,
     }).select("id").single();
     setSubmitting(false);
     if (error) {
       toast.error("অর্ডার সাবমিট করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
       return;
     }
-    // GTM dataLayer — GA4 ecommerce format
     if (typeof window !== "undefined") {
       const item = {
         item_id: "push-chopper",
-        item_name: "Vegetable Push Chopper",
+        item_name: `${hero.title_1} ${hero.title_2}`.trim(),
         item_category: "Kitchen",
         price: PRICE,
         quantity: qty,
       };
       const dl = ((window as any).dataLayer = (window as any).dataLayer || []);
-      // Clear previous ecommerce object (GA4 best practice)
       dl.push({ ecommerce: null });
       dl.push({
         event: "purchase",
@@ -143,7 +152,7 @@ function Index() {
 
       {/* Top bar */}
       <div className="bg-gradient-cta text-white text-center py-2 text-xs sm:text-sm font-medium px-3">
-        <Flame className="inline w-4 h-4 mr-1" /> সীমিত স্টক! ক্যাশ অন ডেলিভারি সারা বাংলাদেশে
+        <Flame className="inline w-4 h-4 mr-1" /> {topbar.text}
       </div>
 
       {/* Header */}
@@ -151,16 +160,16 @@ function Index() {
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-gradient-hero flex items-center justify-center text-white font-bold">
-              GZ
+              {brand.initials}
             </div>
             <div className="leading-tight">
-              <div className="font-bold text-sm sm:text-base">GadgetZone360</div>
-              <div className="text-[10px] sm:text-xs text-muted-foreground">Smart Kitchen Store</div>
+              <div className="font-bold text-sm sm:text-base">{brand.name}</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground">{brand.tagline}</div>
             </div>
           </div>
           <div className="flex items-center gap-1">
             <ThemeToggle />
-            <a href="tel:01610356653" className="flex items-center gap-1.5 text-sm font-semibold text-primary px-2">
+            <a href={`tel:${contact.phone}`} className="flex items-center gap-1.5 text-sm font-semibold text-primary px-2">
               <Phone className="w-4 h-4" /> <span className="hidden xs:inline">কল করুন</span>
             </a>
           </div>
@@ -173,20 +182,20 @@ function Index() {
           <div className="grid md:grid-cols-2 gap-6 md:gap-10 items-center">
             <div className="order-2 md:order-1">
               <div className="inline-flex items-center gap-1.5 bg-accent/30 text-accent-foreground px-3 py-1 rounded-full text-xs font-semibold mb-3">
-                <Star className="w-3.5 h-3.5 fill-current" /> বেস্ট সেলিং প্রোডাক্ট
+                <Star className="w-3.5 h-3.5 fill-current" /> {hero.badge}
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight">
-                Vegetable <span className="text-gradient">Push Chopper</span>
+                {hero.title_1} <span className="text-gradient">{hero.title_2}</span>
               </h1>
               <p className="mt-3 text-muted-foreground text-base sm:text-lg">
-                এক চাপেই নিখুঁত সবজি কাটুন — দ্রুত, সহজ ও নিরাপদ।
+                {hero.subtitle}
               </p>
 
               <div className="mt-5 flex items-end gap-3">
-                <span className="text-muted-foreground line-through text-lg">৭৫০৳</span>
-                <span className="text-4xl sm:text-5xl font-extrabold text-primary">৫৮০৳</span>
+                <span className="text-muted-foreground line-through text-lg">{hero.old_price}৳</span>
+                <span className="text-4xl sm:text-5xl font-extrabold text-primary">{hero.price}৳</span>
                 <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-xs font-bold mb-1">
-                  ২৩% ছাড়
+                  {hero.discount_label}
                 </span>
               </div>
 
@@ -196,7 +205,7 @@ function Index() {
                 className="mt-5 w-full sm:w-auto bg-gradient-cta text-white shadow-cta hover:opacity-95 animate-pulse-cta text-base font-bold rounded-xl px-8 py-6"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                আজই অর্ডার করুন
+                {hero.cta_text}
               </Button>
 
               <div className="mt-5 flex flex-wrap gap-3 text-xs text-muted-foreground">
@@ -209,8 +218,8 @@ function Index() {
             <div className="order-1 md:order-2 relative">
               <div className="absolute -inset-4 bg-gradient-hero opacity-20 blur-3xl rounded-full" />
               <img
-                src={heroImg}
-                alt="Vegetable Push Chopper"
+                src={heroImage}
+                alt={`${hero.title_1} ${hero.title_2}`}
                 width={1024}
                 height={1024}
                 className="relative rounded-3xl shadow-glow w-full animate-float"
@@ -221,29 +230,27 @@ function Index() {
       </section>
 
       {/* Features */}
-      <section className="max-w-5xl mx-auto px-4 py-12">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">
-          কেন <span className="text-gradient">Push Chopper</span>?
-        </h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[
-            { icon: Zap, title: "এক চাপেই নিখুঁত কাট", desc: "সেকেন্ডেই পেঁয়াজ, রসুন, মরিচ, সবজি কেটে নিন।" },
-            { icon: Shield, title: "৩টি স্টেইনলেস স্টিল ব্লেড", desc: "সুপার শার্প ও দীর্ঘস্থায়ী ব্লেড।" },
-            { icon: Check, title: "স্মার্ট লক সিস্টেম", desc: "নিরাপদ ব্যবহারের জন্য সেফটি লক।" },
-            { icon: Truck, title: "ক্যাশ অন ডেলিভারি", desc: "পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।" },
-            { icon: Clock, title: "সময় বাঁচান", desc: "রান্নার প্রস্তুতি ১০ গুণ দ্রুত করুন।" },
-            { icon: Star, title: "মজবুত ও দীর্ঘস্থায়ী", desc: "প্রিমিয়াম BPA-free প্লাস্টিক বডি।" },
-          ].map((f, i) => (
-            <Card key={i} className="p-5 border-border hover:shadow-soft transition-all hover:-translate-y-1">
-              <div className="w-11 h-11 rounded-xl bg-gradient-hero flex items-center justify-center text-white mb-3">
-                <f.icon className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold mb-1">{f.title}</h3>
-              <p className="text-sm text-muted-foreground">{f.desc}</p>
-            </Card>
-          ))}
-        </div>
-      </section>
+      {features.length > 0 && (
+        <section className="max-w-5xl mx-auto px-4 py-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">
+            কেন <span className="text-gradient">{hero.title_2}</span>?
+          </h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {features.map((f, i) => {
+              const Icon = ICON_MAP[f.icon] || Star;
+              return (
+                <Card key={i} className="p-5 border-border hover:shadow-soft transition-all hover:-translate-y-1">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-hero flex items-center justify-center text-white mb-3">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold mb-1">{f.title}</h3>
+                  <p className="text-sm text-muted-foreground">{f.desc}</p>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Gallery */}
       <section className="bg-muted/40 py-12">
@@ -252,11 +259,11 @@ function Index() {
             প্রোডাক্ট গ্যালারি
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-            {[heroImg, actionImg, boxImg, actionImg, heroImg, boxImg].map((src, i) => (
+            {galleryImages.map((src, i) => (
               <img
                 key={i}
                 src={src}
-                alt={`Push Chopper view ${i + 1}`}
+                alt={`Product view ${i + 1}`}
                 width={1024}
                 height={1024}
                 loading="lazy"
@@ -278,10 +285,10 @@ function Index() {
         <p className="text-muted-foreground mb-6">যেকোন প্রয়োজনে আমাদের সাথে যোগাযোগ করুন</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
           <Button asChild size="lg" variant="outline" className="rounded-xl border-2">
-            <a href="tel:01610356653"><Phone className="w-5 h-5 mr-2" /> 01610-356653</a>
+            <a href={`tel:${contact.phone}`}><Phone className="w-5 h-5 mr-2" /> {contact.phone_display}</a>
           </Button>
           <Button asChild size="lg" className="rounded-xl bg-secondary hover:bg-secondary/90">
-            <a href="https://wa.me/8801610356653" target="_blank" rel="noreferrer">
+            <a href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noreferrer">
               <MessageCircle className="w-5 h-5 mr-2" /> WhatsApp
             </a>
           </Button>
@@ -289,70 +296,33 @@ function Index() {
       </section>
 
       {/* FAQ */}
-      <section className="max-w-3xl mx-auto px-4 py-12">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-accent/30 text-accent-foreground px-3 py-1 rounded-full text-xs font-semibold mb-3">
-            <HelpCircle className="w-3.5 h-3.5" /> সাধারণ জিজ্ঞাসা
+      {faqs.length > 0 && (
+        <section className="max-w-3xl mx-auto px-4 py-12">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-accent/30 text-accent-foreground px-3 py-1 rounded-full text-xs font-semibold mb-3">
+              <HelpCircle className="w-3.5 h-3.5" /> সাধারণ জিজ্ঞাসা
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold">
+              অর্ডারের আগে <span className="text-gradient">জেনে নিন</span>
+            </h2>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold">
-            অর্ডারের আগে <span className="text-gradient">জেনে নিন</span>
-          </h2>
-          <p className="text-sm text-muted-foreground mt-2">
-            গ্রাহকদের সবচেয়ে বেশি জিজ্ঞাসিত প্রশ্নগুলোর উত্তর
-          </p>
-        </div>
 
-        <Card className="p-2 sm:p-4 shadow-soft rounded-2xl">
-          <Accordion type="single" collapsible defaultValue="q1" className="w-full">
-            {[
-              {
-                v: "q1",
-                q: "ঢাকার ভিতরে ডেলিভারি চার্জ কত?",
-                a: "ঢাকার ভিতরে ডেলিভারি চার্জ মাত্র ৭০৳। অর্ডার কনফার্ম করার ২৪ ঘন্টার মধ্যে আপনার পণ্য পৌঁছে যাবে।",
-              },
-              {
-                v: "q2",
-                q: "ঢাকার বাইরে ডেলিভারি চার্জ ও সময় কত?",
-                a: "ঢাকার বাইরে সারা বাংলাদেশে ডেলিভারি চার্জ ১৩০৳। কুরিয়ার সার্ভিসের মাধ্যমে ৪৮-৭২ ঘন্টার মধ্যে পণ্য পৌঁছে যাবে।",
-              },
-              {
-                v: "q3",
-                q: "ক্যাশ অন ডেলিভারি (COD) কি আছে?",
-                a: "হ্যাঁ, সারা বাংলাদেশে ক্যাশ অন ডেলিভারি সুবিধা রয়েছে। পণ্য হাতে পেয়ে চেক করার পর টাকা পরিশোধ করতে পারবেন। অগ্রিম কোনো পেমেন্ট দিতে হবে না।",
-              },
-              {
-                v: "q4",
-                q: "ডেলিভারির আগে পণ্য চেক করা যাবে?",
-                a: "অবশ্যই। ডেলিভারিম্যানের সামনে বক্স খুলে পণ্য দেখে, চেক করে তারপর টাকা পরিশোধ করতে পারবেন।",
-              },
-              {
-                v: "q5",
-                q: "অর্ডার কীভাবে দিব?",
-                a: "নিচের অর্ডার ফর্মে আপনার নাম, ঠিকানা ও মোবাইল নম্বর দিয়ে কনফার্ম বাটনে ক্লিক করুন। অথবা সরাসরি 01610-356653 নম্বরে কল/WhatsApp করেও অর্ডার করতে পারেন।",
-              },
-              {
-                v: "q6",
-                q: "পণ্যে কোনো সমস্যা হলে কী করব?",
-                a: "ডেলিভারির সময় পণ্যে কোনো ত্রুটি পেলে সাথে সাথেই আমাদের জানান। আমরা পণ্য পরিবর্তন বা ফেরত দেওয়ার ব্যবস্থা করব।",
-              },
-              {
-                v: "q7",
-                q: "একসাথে একাধিক অর্ডার করা যাবে?",
-                a: "জ্বী, ফর্মে কোয়ান্টিটি বাড়িয়ে যত খুশি অর্ডার করতে পারবেন। ৩+ অর্ডারে বিশেষ ছাড়ের জন্য সরাসরি কল করুন।",
-              },
-            ].map((f) => (
-              <AccordionItem key={f.v} value={f.v} className="border-border px-3">
-                <AccordionTrigger className="text-left font-semibold text-sm sm:text-base hover:no-underline">
-                  {f.q}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-sm leading-relaxed">
-                  {f.a}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </Card>
-      </section>
+          <Card className="p-2 sm:p-4 shadow-soft rounded-2xl">
+            <Accordion type="single" collapsible defaultValue="q0" className="w-full">
+              {faqs.map((f, i) => (
+                <AccordionItem key={i} value={`q${i}`} className="border-border px-3">
+                  <AccordionTrigger className="text-left font-semibold text-sm sm:text-base hover:no-underline">
+                    {f.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-sm leading-relaxed">
+                    {f.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </Card>
+        </section>
+      )}
 
       {/* Order Form */}
       <section id="order" className="bg-gradient-warm py-12">
@@ -367,11 +337,10 @@ function Index() {
           </div>
 
           <Card className="p-5 sm:p-7 shadow-soft rounded-2xl">
-            {/* Product row */}
             <div className="flex items-center gap-3 pb-4 border-b border-border">
-              <img src={heroImg} alt="" width={80} height={80} loading="lazy" className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl" />
+              <img src={heroImage} alt="" width={80} height={80} loading="lazy" className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl" />
               <div className="flex-1 min-w-0">
-                <div className="font-bold text-sm sm:text-base">Vegetable Push Chopper</div>
+                <div className="font-bold text-sm sm:text-base">{hero.title_1} {hero.title_2}</div>
                 <div className="text-primary font-bold">{PRICE}৳</div>
               </div>
               <div className="flex items-center gap-1 bg-muted rounded-full p-1">
@@ -404,16 +373,15 @@ function Index() {
                 <RadioGroup value={shipping} onValueChange={(v) => setShipping(v as "inside" | "outside")} className="grid grid-cols-2 gap-2">
                   <label className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition ${shipping === "inside" ? "border-primary bg-primary/5" : "border-border"}`}>
                     <RadioGroupItem value="inside" />
-                    <div className="text-sm"><div className="font-semibold">ঢাকার ভিতরে</div><div className="text-xs text-muted-foreground">৭০৳</div></div>
+                    <div className="text-sm"><div className="font-semibold">{ship.inside_label}</div><div className="text-xs text-muted-foreground">{ship.inside_fee}৳</div></div>
                   </label>
                   <label className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition ${shipping === "outside" ? "border-primary bg-primary/5" : "border-border"}`}>
                     <RadioGroupItem value="outside" />
-                    <div className="text-sm"><div className="font-semibold">ঢাকার বাইরে</div><div className="text-xs text-muted-foreground">১৩০৳</div></div>
+                    <div className="text-sm"><div className="font-semibold">{ship.outside_label}</div><div className="text-xs text-muted-foreground">{ship.outside_fee}৳</div></div>
                   </label>
                 </RadioGroup>
               </div>
 
-              {/* Summary */}
               <div className="bg-muted/50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between"><span>Subtotal</span><span>{subtotal}৳</span></div>
                 <div className="flex justify-between"><span>Shipping</span><span>{shippingFee}৳</span></div>
@@ -438,8 +406,8 @@ function Index() {
       {/* Footer */}
       <footer className="bg-foreground text-background/80 py-8 text-center text-sm">
         <div className="max-w-5xl mx-auto px-4">
-          <div className="font-bold text-background mb-1">GadgetZone360</div>
-          <p>© 2026 GadgetZone360. All rights reserved.</p>
+          <div className="font-bold text-background mb-1">{brand.name}</div>
+          <p>© 2026 {brand.name}. All rights reserved.</p>
         </div>
       </footer>
 

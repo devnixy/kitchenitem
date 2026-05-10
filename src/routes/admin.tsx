@@ -20,6 +20,7 @@ import {
   LogOut, Trash2, Phone, MapPin, Package, RefreshCw, ShieldAlert, Save, Settings, Search, X,
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { SiteContentEditor } from "@/components/site-content-editor";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -233,6 +234,9 @@ function AdminPage() {
             পরিবর্তন সাইটের পরবর্তী পেজ লোড থেকে কার্যকর হবে।
           </p>
         </Card>
+
+        {/* Site Content Editor */}
+        <SiteContentEditor />
 
         {/* Phone Search */}
         <Card className="p-4 rounded-xl">
