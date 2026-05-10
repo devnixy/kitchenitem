@@ -40,6 +40,7 @@ export type Database = {
           id: string
           notes: string | null
           phone: string
+          product_id: string | null
           quantity: number
           shipping_area: string
           shipping_fee: number
@@ -55,6 +56,7 @@ export type Database = {
           id?: string
           notes?: string | null
           phone: string
+          product_id?: string | null
           quantity?: number
           shipping_area: string
           shipping_fee: number
@@ -70,6 +72,7 @@ export type Database = {
           id?: string
           notes?: string | null
           phone?: string
+          product_id?: string | null
           quantity?: number
           shipping_area?: string
           shipping_fee?: number
@@ -78,7 +81,15 @@ export type Database = {
           unit_price?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
