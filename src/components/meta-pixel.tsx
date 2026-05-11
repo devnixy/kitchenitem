@@ -83,7 +83,12 @@ export async function trackMetaEvent(
   const opts: Record<string, unknown> = {};
   if (window.__metaTestEventCode) opts.test_event_code = window.__metaTestEventCode;
   try {
-    window.fbq?.("track", eventName, params, opts);
+    (window.fbq as ((...args: unknown[]) => void) | undefined)?.(
+      "track",
+      eventName,
+      params,
+      opts,
+    );
   } catch {
     // Ignore pixel errors
   }
