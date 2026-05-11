@@ -49,8 +49,8 @@ function injectPixelScript(pixelId: string) {
     s.parentNode.insertBefore(t, s);
   })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
   /* eslint-enable */
-  window.fbq?.("init", pixelId);
-  window.fbq?.("track", "PageView");
+  (window.fbq as ((...args: unknown[]) => void) | undefined)?.("init", pixelId);
+  (window.fbq as ((...args: unknown[]) => void) | undefined)?.("track", "PageView");
 }
 
 export function MetaPixelLoader() {
